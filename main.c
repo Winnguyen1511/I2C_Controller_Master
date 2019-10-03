@@ -64,7 +64,7 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-void Send_Command(uint8_t);
+void Send_Command(uint8_t, uint16_t);
 void ReceiveData(void);
 void Update_LCD_Command(void);
 void Update_LCD_Speed(void);
@@ -117,8 +117,8 @@ int main(void)
 	lcd_send_string("Dy:stop  Team3");
 	HAL_Delay(40);
 	lcd_goto_XY(2,0);
-	lcd_send_string("Dx:stop  Sp:000%");
-	//HAL_TIM_Base_Start_IT(&htim3);
+	lcd_send_string("Dx:stop  Sp:050%");
+	HAL_TIM_Base_Start_IT(&htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -221,7 +221,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 30000;
+  htim2.Init.Period = 50000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -266,7 +266,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 0xFFFF;
+  htim3.Init.Period = 40000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -322,7 +322,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PA8 PA10 PA11 PA12 
                            PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12 
+  GPIO_InitStruct.Pin = GPIO_PIN_7 |GPIO_PIN_8|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12 
                           |GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
@@ -340,16 +340,17 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	for(int i = 0; i < 20000; i++);
 	
 	if(GPIO_Pin == MOVE_UP_PIN)
 	{
 		if(DIRECTION_PORT->IDR & MOVE_UP_IDR)// when not press MOVE_UP button
 		{
-			Send_Command(MOVE_UP_COMMAND_END);
+			Send_Command(MOVE_UP_COMMAND_END,1000);
 			Send_LCD_DirY(LCD_DIRX_STOP);
 		}
 		else{//when press MOVE_UP button
-			Send_Command(MOVE_UP_COMMAND_START);
+			Send_Command(MOVE_UP_COMMAND_START,1000);
 			Send_LCD_DirY(LCD_DIRX_UP);
 		}
 	}
@@ -358,11 +359,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if(DIRECTION_PORT->IDR & MOVE_DOWN_IDR) // when not press MOVE_DOWN	button
 		{
-			Send_Command(MOVE_DOWN_COMMAND_END);
+			Send_Command(MOVE_DOWN_COMMAND_END,1000);
 			Send_LCD_DirY(LCD_DIRX_STOP);
 		}
 		else{//when press MOVE_DOWN button
-			Send_Command(MOVE_DOWN_COMMAND_START);
+			Send_Command(MOVE_DOWN_COMMAND_START,1000);
 			Send_LCD_DirY(LCD_DIRX_DOWN);
 		}	
 	}
@@ -371,11 +372,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if(DIRECTION_PORT->IDR & MOVE_LEFT_IDR) // when not press MOVE_LEFT button
 		{
-			Send_Command(MOVE_LEFT_COMMAND_END);
+			Send_Command(MOVE_LEFT_COMMAND_END,1000);
 			Send_LCD_DirX(LCD_DIRY_STOP);
 		}
 		else{//when press MOVE_LEFT button
-			Send_Command(MOVE_LEFT_COMMAND_START);
+			Send_Command(MOVE_LEFT_COMMAND_START,1000);
 			Send_LCD_DirX(LCD_DIRY_LEFT);
 		}
 	}
@@ -384,11 +385,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if(DIRECTION_PORT->IDR & MOVE_RIGHT_IDR)// when not press MOVE_RIGHT button
 		{
-			Send_Command(MOVE_RIGHT_COMMAND_END);
+			Send_Command(MOVE_RIGHT_COMMAND_END,1000);
 			Send_LCD_DirX(LCD_DIRY_STOP);
 		}
 		else{//when press MOVE_RIGHT button
-			Send_Command(MOVE_RIGHT_COMMAND_START);
+			Send_Command(MOVE_RIGHT_COMMAND_START,1000);
 			Send_LCD_DirX(LCD_DIRY_RIGHT);
 			
 		}
@@ -396,54 +397,49 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	
 	if(GPIO_Pin == SPEED_DOWN_PIN)
 	{
+		//EXTI->PR |= GPIO_Pin;
 		if(SPEED_DOWN_PORT->IDR & SPEED_DOWN_IDR)// when not press SPEED_DOWN button
 		{
-			Send_Command(SPEED_DOWN_END);	
+			Send_Command(SPEED_DOWN_END,1000);	
 			HAL_TIM_Base_Stop_IT(&htim2);			
 		}
 		else 
 		{//when press SPEED_DOWN button
-			Send_Command(SPEED_DOWN_START);
+			Send_Command(SPEED_DOWN_START,1000);
 			HAL_TIM_Base_Start_IT(&htim2);
 		}
 	}
 	
 	if(GPIO_Pin == SPEED_UP_PIN)
 	{
+		//EXTI->PR |= GPIO_Pin;
 		if(SPEED_UP_PORT->IDR & SPEED_UP_IDR)// when not press SPEED_UP button
 		{
-			Send_Command(SPEED_UP_END);
+			Send_Command(SPEED_UP_END,1000);
 			HAL_TIM_Base_Stop_IT(&htim2);
 		//return;
 		}
 		else 
 		{//when press SPEED_UP button
-			Send_Command(SPEED_UP_START);
+			Send_Command(SPEED_UP_START,1000);
 			HAL_TIM_Base_Start_IT(&htim2);
 		}
 	}
 }
-void Send_Command(uint8_t command)
+void Send_Command(uint8_t command, uint16_t timeout)
 {
 	uint8_t buf[I2C_FRAME_LENGTH] = {0} ;
 	buf[I2C_COMMAND_BIT] = command;
-	/*do
-	{
-		if(HAL_I2C_Master_Transmit_IT(&hi2c1, I2C_ADDRESS, buf , 1) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		
-		//while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY);
-	}
-	while(HAL_I2C_GetError(&hi2c1) == HAL_I2C_ERROR_AF);*/
-	while(HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS,(uint8_t*) buf,  I2C_FRAME_LENGTH, 1000) != HAL_OK)
-  {
-		if(HAL_I2C_GetError(&hi2c1) != HAL_I2C_ERROR_AF)
-		{
-			Error_Handler();
-		}
-	}
+
+//	while(HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS,(uint8_t*) buf,  I2C_FRAME_LENGTH, timeout) != HAL_OK)
+//  {
+//		if(HAL_I2C_GetError(&hi2c1) != HAL_I2C_ERROR_AF)
+//		{
+//			Error_Handler();
+//			
+//		}
+//	}
+	HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS,(uint8_t*) buf,  I2C_FRAME_LENGTH, timeout);
 }
 void Update_LCD_Command(void)
 {
@@ -492,14 +488,25 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 }
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//	do
+//  {
+//    if(HAL_I2C_Master_Receive_IT(&hi2c1, (uint16_t)I2C_ADDRESS, (uint8_t *)aRxBuffer, I2C_FRAME_LENGTH) != HAL_OK)
+//    {
+//      /* Error_Handler() function is called in case of error. */
+//      Error_Handler();
+//    }
+
+//    /* When Acknowledge failure occurs (Slave don't acknowledge its address)
+//    Master restarts communication */
+//  }
+//  while(HAL_I2C_GetError(&hi2c1) == HAL_I2C_ERROR_AF);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if(htim->Instance == TIM2)
 	{
-		Send_Command(MASTER_CHECK_SPEED);
+		Send_Command(MASTER_CHECK_SPEED,1000);
 		ReceiveData();
 		Update_LCD_Speed();
 	}
@@ -521,27 +528,56 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 void ReceiveData(void)
 {
-	while(HAL_I2C_Master_Receive(&hi2c1, I2C_ADDRESS, (uint8_t*)aRxBuffer, I2C_FRAME_LENGTH, 1000) != HAL_OK)
-	{
-		if(HAL_I2C_GetError(&hi2c1) != HAL_I2C_ERROR_AF)
-			Error_Handler();
-	}		
+//	while(HAL_I2C_Master_Receive(&hi2c1, I2C_ADDRESS, (uint8_t*)aRxBuffer, I2C_FRAME_LENGTH, 1000) != HAL_OK)
+//	{
+//		if(HAL_I2C_GetError(&hi2c1) != HAL_I2C_ERROR_AF)
+//		{
+//			Error_Handler();
+//		}
+//	}		
+//	do
+//  {
+//    if(HAL_I2C_Master_Receive_IT(&hi2c1, (uint16_t)I2C_ADDRESS, (uint8_t *)aRxBuffer, I2C_FRAME_LENGTH) != HAL_OK)
+//    {
+//      /* Error_Handler() function is called in case of error. */
+//      Error_Handler();
+//    }
+
+//    /* When Acknowledge failure occurs (Slave don't acknowledge its address)
+//    Master restarts communication */
+//  }
+//  while(HAL_I2C_GetError(&hi2c1) == HAL_I2C_ERROR_AF);
+	HAL_I2C_Master_Receive(&hi2c1, I2C_ADDRESS, (uint8_t*)aRxBuffer, I2C_FRAME_LENGTH, 1000);
 }
 
 void Update_LCD_Speed(void)
 {
-	uint8_t tempBuf[I2C_DATA_LENGTH] = {0};
-	for(int i = 0; i <= 3; i++)
-		tempBuf[i] = aRxBuffer[i+1];
-	if(strcmp((char*)tempBuf, "100") == 0 )
-		lcd_goto_XY(2,12);
-	else 
+	uint16_t tempBuf = aRxBuffer[I2C_DATA_LENGTH];
+	uint8_t tempStr[3];
+	sprintf((char*)tempStr,"%d", tempBuf);
+//	if(strcmp((char*)tempBuf, "100") == 0 )
+//		lcd_goto_XY(2,12);
+//	else 
+//	{
+//		lcd_goto_XY(2,12);
+//		lcd_send_string("0");
+//		lcd_goto_XY(2,13);
+//	}
+	lcd_goto_XY(2,12);
+//	if(strlen((char*) tempBuf) == 3)
+//		lcd_goto_XY(2,12);
+	if(strlen((char*) tempStr) == 2)
 	{
-		lcd_goto_XY(2,12);
 		lcd_send_string("0");
 		lcd_goto_XY(2,13);
 	}
-	lcd_send_string((char*)tempBuf);
+
+	else if(strlen((char*) tempStr) == 1)
+	{
+		lcd_send_string("00");
+		lcd_goto_XY(2,14);
+	}
+	lcd_send_string((char*)tempStr);
 }
 /* USER CODE END 4 */
 
