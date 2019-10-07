@@ -70,6 +70,7 @@ void Update_LCD_Command(void);
 void Update_LCD_Speed(void);
 void Send_LCD_DirX(uint8_t);
 void Send_LCD_DirY(uint8_t);
+uint8_t checksum_8bit(uint8_t*buffer);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -430,7 +431,7 @@ void Send_Command(uint8_t command, uint16_t timeout)
 {
 	uint8_t buf[I2C_FRAME_LENGTH] = {0} ;
 	buf[I2C_COMMAND_BIT] = command;
-
+	buf[I2C_CHECKSUM_BIT] = command % 256;
 //	while(HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS,(uint8_t*) buf,  I2C_FRAME_LENGTH, timeout) != HAL_OK)
 //  {
 //		if(HAL_I2C_GetError(&hi2c1) != HAL_I2C_ERROR_AF)
@@ -548,6 +549,9 @@ void ReceiveData(void)
 //  }
 //  while(HAL_I2C_GetError(&hi2c1) == HAL_I2C_ERROR_AF);
 	HAL_I2C_Master_Receive(&hi2c1, I2C_ADDRESS, (uint8_t*)aRxBuffer, I2C_FRAME_LENGTH, 1000);
+	if(checksum_8bit((uint8_t*)aRxBuffer) == I2C_CHECKSUM_FALSE)
+		for(int i = 0; i < I2C_FRAME_LENGTH; i++)
+			aRxBuffer[i] = 0;
 }
 
 void Update_LCD_Speed(void)
@@ -578,6 +582,17 @@ void Update_LCD_Speed(void)
 		lcd_goto_XY(2,14);
 	}
 	lcd_send_string((char*)tempStr);
+}
+
+uint8_t checksum_8bit(uint8_t*buffer)
+{
+	uint8_t checkbit = buffer[I2C_CHECKSUM_BIT];
+	uint8_t sum = 0;
+	sum = buffer[0] + buffer[1];
+	sum = sum % 256;
+	if(sum == checkbit)
+		return I2C_CHECKSUM_TRUE;
+	return I2C_CHECKSUM_FALSE;
 }
 /* USER CODE END 4 */
 

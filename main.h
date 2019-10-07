@@ -103,6 +103,9 @@ void Error_Handler(void);
 #define	I2C_FRAME_LENGTH						3
 #define	I2C_DATA_LENGTH							1
 #define	I2C_COMMAND_BIT							0
+#define	I2C_CHECKSUM_BIT						2
+#define I2C_CHECKSUM_TRUE						1
+#define	I2C_CHECKSUM_FALSE					0
 
 #define MOVE_UP_COMMAND_START				0x01
 #define	MOVE_UP_COMMAND_END					0x02
